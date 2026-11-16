@@ -1,0 +1,34 @@
+# Dataset đã giải nén và gói tải: đặt ở thư mục gốc repo.
+/data/
+/raw/
+/datasets/
+
+# Gói nén có thể chứa dữ liệu, kể cả khi đặt ngoài raw/.
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.bz2
+*.xz
+
+# Báo cáo EDA tự sinh; vẫn giữ được các báo cáo viết tay ở nơi khác.
+/reports/eda/
+/outputs/
+
+# Notebook / Python / môi trường cục bộ.
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Metadata hệ điều hành.
+.DS_Store
+Thumbs.db
+Desktop.ini

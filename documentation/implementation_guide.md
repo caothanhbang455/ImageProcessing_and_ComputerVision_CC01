@@ -19,7 +19,6 @@ The project folder is also the Git repository root. Python modules are imported 
 ```text
 Document Unwarping/
 ├── README.md
-├── context.md
 ├── configs/
 │   ├── datasets.yaml
 │   ├── evaluation.yaml
@@ -119,7 +118,7 @@ print(sample.sample_key, image.shape)
 
 `SampleRecord` includes `sample_key`, `dataset`, `sample_id`, `variant`, `input_path`, optional `reference_path`, `group_id`, `annotation_paths`, and `metadata`. Use `sample_key` as the unique identity within run artifacts. `group_id` identifies a related document or geometry group when available. Paths in the manifest are relative to the repository root; `PathResolver` locates the physical file, including supported Colab runtime staging locations.
 
-Do not pair input and reference images by directory order. DocUNet contains multiple views of some documents, and DIR300 pairs are identified by numbered IDs. The UVDoc datasets provide separate geometry annotations, whose representation must be interpreted through their dataset-specific readers. See [Dataset protocols](dataset_protocols.md) for the full pairing and split rules.
+Do not pair input and reference images by directory order. DocUNet contains multiple views of some documents, and DIR300 pairs are identified by numbered IDs. The UVDoc datasets provide separate geometry annotations, whose representation must be interpreted through their dataset-specific readers. See [Dataset protocols](reference/dataset_protocols.md) for the full pairing and split rules.
 
 ## 4. Implementing methods
 
@@ -189,7 +188,7 @@ A dense backward map has shape `(H_output, W_output, 2)`. It may contain source 
 
 The official UVDoc network predicts coarse 2D and 3D grids. These are different from the dense map accepted by `MethodResult`. In particular, adding a dense map to a new method does not make it compatible with the official UVDoc line metric, which expects UVDoc's coarse backward grid representation.
 
-Use the tested utilities in `geometry/` for repeated operations. See [Geometry conventions](geometry_conventions.md) for homography direction, map composition, coordinate conversion, and sampling formulas.
+Use the tested utilities in `geometry/` for repeated operations. See [Geometry conventions](reference/geometry_conventions.md) for homography direction, map composition, coordinate conversion, and sampling formulas.
 
 ## 6. Running inference and saving predictions
 
@@ -283,7 +282,7 @@ A general image-only method cannot receive an official UVDoc line score. It need
 
 Evaluation outputs are stored under `runs/evaluation/<evaluation_id>/`. Inspect `samples.csv` for evaluation status, `metrics/per_sample.csv` for values and reasons, `metrics/summary.csv` for coverage and statistics, and `report.md` for the run summary. UVDoc line runs also save `metrics/per_line.csv` and reference parity evidence when requested.
 
-The recorded Colab validation completed the UVDoc 50-image line evaluation and obtained exact independent line-metric parity on samples `00010` and `00011`. MATLAB reference metrics were not computed in that environment because MATLAB Engine was unavailable. These are separate verification statements; neither implies image similarity or OCR performance. For protocol definitions and limitations, see [Evaluation protocols](evaluation_protocols.md).
+The recorded Colab validation completed the UVDoc 50-image line evaluation and obtained exact independent line-metric parity on samples `00010` and `00011`. MATLAB reference metrics were not computed in that environment because MATLAB Engine was unavailable. These are separate verification statements; neither implies image similarity or OCR performance. For protocol definitions and limitations, see [Evaluation protocols](reference/evaluation_protocols.md).
 
 ## 8. Testing and maintaining the repository
 
@@ -303,12 +302,12 @@ Use separate Git branches for independent work. Stage only the intended source o
 | Problem | First place to check |
 |---|---|
 | Dataset file cannot be found | `configs/datasets.yaml`, manifest path, `data/paths.py`, and local dataset staging |
-| A sample is paired with the wrong reference | `SampleRecord.sample_key`, `reference_path`, and [Dataset protocols](dataset_protocols.md) |
+| A sample is paired with the wrong reference | `SampleRecord.sample_key`, `reference_path`, and [Dataset protocols](reference/dataset_protocols.md) |
 | A method produces `FAILED` | Its `failure_reason`, `samples.csv`, and method-specific tests |
-| Backward map has wrong shape or direction | `models/interfaces.py` and [Geometry conventions](geometry_conventions.md) |
+| Backward map has wrong shape or direction | `models/interfaces.py` and [Geometry conventions](reference/geometry_conventions.md) |
 | Evaluation reports `NOT_APPLICABLE` | Selected protocol and required grid representation |
 | Evaluation reports `UNAVAILABLE_DEPENDENCY` | MATLAB/SIFT-flow availability and `evaluation/reference_metrics.py` |
 | A saved result is rejected | `artifacts.csv`, recorded hashes, and manifest fingerprint |
 | A Colab-only command fails in PowerShell | Run `%cd` and `!python` in a Colab cell, not in Windows PowerShell |
 
-For more detail, consult [Stage 2 implementation](stage2_implementation.md) for the official UVDoc inference path and [Stage 3 implementation](stage3_implementation.md) for benchmark execution and output files. The shared interfaces described here should remain small; a new method normally needs a callable, its configuration, and focused tests rather than changes throughout the repository.
+Older implementation notes are kept in the [documentation archive](archive/implementation/) for historical reference. For current benchmark requirements, consult [Evaluation protocols](reference/evaluation_protocols.md). The shared interfaces described here should remain small; a new method normally needs a callable, its configuration, and focused tests rather than changes throughout the repository.

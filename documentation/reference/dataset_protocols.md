@@ -74,7 +74,7 @@ Stage 1 does not download, extract, or duplicate any dataset. Selective archive 
 ## 8. Validation and limitations
 
 ```powershell
-python -m pip install -r requirements-stage1.txt
+python -m pip install -r requirements.txt
 python -m pytest -q tests
 python scripts/validate_datasets.py --root "G:\My Drive\Document Unwarping"
 python scripts/validate_datasets.py --root "G:\My Drive\Document Unwarping" --check-files --max-files-per-dataset 3 --smoke-read 2

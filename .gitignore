@@ -82,3 +82,4 @@ Desktop.ini
 /CLAUDE.md
 
 /stage2_manifest.json
+*.pyc

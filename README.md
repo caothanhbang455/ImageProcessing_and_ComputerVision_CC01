@@ -1,124 +1,99 @@
 # Document Image Unwarping
 
-Research and implementation work on correcting geometric distortions in photographed paper documents. The project studies a pretrained neural unwarping baseline, evaluates it on real documents, and develops classical image processing methods for comparison and possible integration.
+This project studies ways to correct geometric distortion in photographed documents. It covers classical image processing and deep-learning methods, with the official pretrained [UVDoc](https://github.com/tanguymagne/UVDoc) model as the initial reference. The goal is to compare methods on consistent datasets and understand where they work, where they fail, and why.
 
-This is an active course project. The repository is being set up; **the presence of a planned file or experiment in this README does not mean it has been implemented or run**.
+A flat page photographed at an angle may need only perspective correction. A curved or folded page needs a more flexible transformation. These are geometric problems, distinct from removing shadows, sharpening text, or improving OCR results.
 
-## Project scope
+## Documentation
 
-A photographed document may contain perspective distortion, page curvature, folds, occlusion, shadows, and complex backgrounds. Geometric unwarping aims to produce an image in which document content is arranged as it would be on a flat page. Appearance correction and text readability are related, but they are evaluated separately from geometric alignment.
+The [documentation index](documentation/README.md) is the best place to start. The main guides are:
 
-The initial deep learning baseline is **UVDoc: Neural Grid-based Document Unwarping**. The project will also investigate classical computer vision methods, but the first implementation milestone is to establish reliable data loading, baseline inference, evaluation, and error analysis.
+| English | Tiếng Việt | Topic |
+|---|---|---|
+| [Implementation guide](documentation/implementation_guide.md) | [Hướng dẫn sử dụng repository](documentation/implementation_guide-vi.md) | Dataset access, writing methods, inference, saved outputs |
+| [Understanding methods](documentation/methods_overview.md) | [Tìm hiểu các phương pháp](documentation/methods_overview-vi.md) | Perspective correction, nonrigid geometry, neural and hybrid methods |
+| [Experiments and evaluation](documentation/experiments_and_evaluation.md) | [Thực nghiệm và đánh giá](documentation/experiments_and_evaluation-vi.md) | Fair comparisons, metrics, failures, reporting |
+
+Precise [dataset](documentation/reference/dataset_protocols.md), [geometry](documentation/reference/geometry_conventions.md), and [evaluation](documentation/reference/evaluation_protocols.md) conventions are in `documentation/reference/`. Earlier implementation notes and research reports are retained in `documentation/archive/`; they are historical records, not instructions for the current setup.
 
 ## Datasets
 
-| Dataset | Role | Current status |
-|---|---|---|
-| [DocUNet](https://www3.cs.stonybrook.edu/~cvl/docunet.html) | Primary real-world evaluation benchmark | Original photographs, crops, reference scans, and evaluation files are present locally; full audit pending |
-| [DIR300](https://github.com/fh2019ustc/DocScanner) | Independent external real-world test benchmark | Planned acquisition and audit |
-| [UVDoc Final](https://github.com/tanguymagne/UVDoc-Dataset) | Supervised training data with 2D/3D geometric annotations | Selected; download and annotation audit pending |
-| Generated synthetic samples | Controlled geometry experiments and diagnostic tests | Planned, not yet generated |
+| Dataset | Manifest records | Main use |
+|---|---:|---|
+| [UVDoc Final](https://github.com/tanguymagne/UVDoc-Dataset) | 20,000 | Geometric annotations for method development and possible training |
+| UVDoc Benchmark | 50 | Official UVDoc line evaluation and texture preparation |
+| [DocUNet](https://www3.cs.stonybrook.edu/~cvl/docunet.html) | 130 | Real document images with scanned references |
+| [DIR300](https://github.com/fh2019ustc/DocScanner) | 300 | An additional real-image evaluation set |
 
-DocUNet and DIR300 are evaluation datasets, not default training sets. UVDoc Final is the primary candidate for training the original UVDoc-style geometry objective. The full Doc3D download is outside the current storage budget and is not a prerequisite for baseline inference.
+These are manifest counts, not a promise that every dataset is present on a particular machine. Raw files and metadata live under `dataset/` and are not tracked in Git. DocUNet and DIR300 are evaluation datasets, not default training sets.
 
-See [`context.md`](context.md) for the complete dataset decisions, evaluation plan, and current blockers.
-
-## Repository layout
-
-The local project folder **is the Git repository root**. Do not create a nested clone of the shared team repository.
+## Project layout
 
 ```text
 Document Unwarping/
-├── README.md
-├── CLAUDE.md                  # Agent working conventions, when installed
-├── context.md                 # Project state, decisions, and next work
-├── .gitignore
-├── requirements-eda.txt      # Existing team EDA dependencies
-├── paper/                    # Local papers, ignored by Git
-├── dataset/                  # Local datasets, ignored by Git
-│   └── DocUNet/
-│       ├── original/
-│       ├── crop/
-│       ├── scan/
-│       └── eval/
-├── documentation/            # Tracked notes and evaluation decisions
-├── notebooks/                # Existing team notebooks and future notebooks
-├── notebook/                 # Existing local notebook, preserved and ignored
-├── data/                     # Planned tracked dataset loaders and manifests
-├── models/                   # Planned model-specific code
-│   ├── deep/
-│   └── classical/
-├── evaluation/               # Planned metrics, protocols, and error analysis
-├── training/                 # Planned training code, if needed
-├── tests/                    # Planned correctness tests
-├── checkpoints/              # Local weights, ignored by Git
-└── runs/                     # Local experiment outputs, ignored by Git
+├── configs/            # Dataset, model and evaluation settings
+├── data/               # Sample records, dataset readers and image loading
+├── geometry/           # Coordinates, grids, homography and sampling
+├── models/             # MethodResult interface and model implementations
+├── evaluation/         # Evaluation protocols, metrics and run reader
+├── scripts/            # Method inference, UVDoc inference and evaluation
+├── tests/              # Automated tests
+├── notebooks/          # Colab experiments and investigation
+├── requirements.txt    # Shared Python dependencies
+├── documentation/      # Guides, references and archived research notes
+├── dataset/            # Local datasets (ignored by Git)
+├── checkpoints/        # Local model weights (ignored by Git)
+├── runs/               # Inference and evaluation outputs (ignored by Git)
+└── paper/              # Local papers (ignored by Git)
 ```
 
-The directories marked *planned* should be created when implementation needs them. Existing research material and notebooks must not be moved merely to match this layout.
+`data/` contains Python dataset utilities; `dataset/` contains the actual images and annotations. New classical methods can be placed in `models/classical/` when needed, while neural implementations belong in `models/deep/`. There is no need to create unused directories in advance.
 
 ## Getting started
 
-### Local environment
+Google Colab is the environment used for the verified UVDoc and evaluation runs. In a Colab cell, mount Drive and work from the repository root:
 
-The project is developed in Windows PowerShell and Google Colab. The working directory on Windows is:
+```python
+from google.colab import drive
 
-```text
-G:\My Drive\Document Unwarping
+drive.mount("/content/drive")
+%cd "/content/drive/MyDrive/Document Unwarping"
 ```
 
-The corresponding Google Drive path after mounting in Colab is:
+Install the shared Python dependencies and run the tests:
 
-```text
-/content/drive/MyDrive/Document Unwarping
+```python
+%pip install -r requirements.txt
+!python -m pytest -q tests/
 ```
 
-For the existing dataset-exploration notebooks, the team provides a small CPU-oriented environment:
+The latest reported complete suite passed **95 tests** in Colab on 21 November 2026. The single requirements file uses the CUDA-enabled PyTorch already provided by Colab; it does not install a replacement PyTorch build or the MATLAB reference evaluation environment. On Windows, use normal PowerShell commands without the Colab `%` and `!` prefixes.
 
-```powershell
-cd "G:\My Drive\Document Unwarping"
-python -m pip install -r requirements-eda.txt
-python -m jupyter lab
+To select DIR300 samples:
+
+```python
+from pathlib import Path
+from data.manifests import load_records
+
+root = Path("/content/drive/MyDrive/Document Unwarping")
+records = load_records("dir300", root, variant="dist")
+print(records[0].sample_key)
 ```
 
-These commands install only the existing EDA requirements. **UVDoc inference and training dependencies are not finalized yet.** Do not assume that this environment can load the pretrained checkpoint or train a model.
+For a new method, `scripts.run_method.run_method()` accepts a function that receives an RGB image and returns `MethodResult`. The official UVDoc path uses `scripts/run_inference.py` and retains its model-specific coarse grids. Prediction runs are saved in `runs/inference/`; compatible evaluation results go in `runs/evaluation/`. See the implementation guide for a complete example.
 
-### Data locations
+## Evaluation and verified status
 
-The existing local DocUNet data is expected at:
+Evaluation is dataset-specific. UVDoc Benchmark has an official line metric that requires a compatible coarse grid. DocUNet and DIR300 support reference-data preparation; published image metrics require the appropriate MATLAB and SIFT-flow dependencies. Successfully preparing reference images is not the same as computing benchmark scores.
 
-```text
-dataset/DocUNet/original/
-dataset/DocUNet/crop/
-dataset/DocUNet/scan/
-dataset/DocUNet/eval/
-```
+In the recorded Colab work, official UVDoc inference and line evaluation completed for all 50 benchmark samples. The independent line-metric and texture comparisons passed for two selected samples. MATLAB-based benchmark scores were not calculated in that environment. These checks establish reproducibility of the tested paths, not the performance of any future method.
 
-Do not rename source files to simplify pairing. The future dataset manifest should handle filenames, extensions, document IDs, and multiple views explicitly. All image and annotation files remain excluded from Git.
-
-## Evaluation approach
-
-We will use the same verified sample manifest and documented preprocessing protocol for all competing methods.
-
-- **Geometric quality:** Local Distortion (LD) and Aligned Distortion (AD), using the appropriate reference evaluation protocol.
-- **Image similarity:** Multi-Scale Structural Similarity (MS-SSIM), with the implementation and alignment rules recorded.
-- **Text readability:** Character Error Rate (CER) and Edit Distance when a defensible text-reference protocol is available.
-- **Efficiency:** Inference runtime measured on a specified device and input size.
-- **Synthetic geometry:** 2D/3D grid error when corresponding ground-truth annotations are available.
-
-Evaluation will retain per-image results, metric distributions, and visual failure cases rather than report only average scores. A Python metric implementation will not be described as benchmark-equivalent until its preprocessing and numerical results are validated against the relevant reference implementation.
-
-## Current status and next work
-
-The local branch `research/classical-document-unwarping` was created from the shared repository's `main` branch. Its first push failed with HTTP 403 because the GitHub account lacked permission to write to the team's repository. **The branch exists locally but has not been confirmed on the remote.**
-
-The immediate work is to finalize the dataset manifests and EDA, prepare official UVDoc pretrained inference, implement and validate the evaluation metrics, and establish image-level error analysis. The UVDoc Final archive is reported to be about 27 GB; download and extraction will be planned for Google Colab and Google Drive, with storage and integrity checks. No baseline scores or training results are claimed here.
+The [evaluation guide](documentation/experiments_and_evaluation.md) explains how to interpret comparisons; the exact scoring requirements are in the [evaluation protocols](documentation/reference/evaluation_protocols.md).
 
 ## References
 
-- [UVDoc model and evaluation code](https://github.com/tanguymagne/UVDoc)
-- [UVDoc dataset release and annotation layout](https://github.com/tanguymagne/UVDoc-Dataset)
+- [UVDoc model](https://github.com/tanguymagne/UVDoc) and [UVDoc dataset](https://github.com/tanguymagne/UVDoc-Dataset)
 - [DocUNet benchmark](https://www3.cs.stonybrook.edu/~cvl/docunet.html)
-- [DocScanner and DIR300](https://github.com/fh2019ustc/DocScanner)
+- [DocScanner / DIR300](https://github.com/fh2019ustc/DocScanner)
 
-For agent behavior, follow `CLAUDE.md`. For decisions, dataset status, evaluation conventions, and unresolved questions, read [`context.md`](context.md). For implementation details and actual results, use the relevant files in `documentation/` and recorded run outputs.
+Do not commit `dataset/`, `runs/`, `checkpoints/`, local research PDFs, caches, or local `CLAUDE.md` files. Earlier reports are preserved under `documentation/archive/` so the active documentation can stay focused on current use.

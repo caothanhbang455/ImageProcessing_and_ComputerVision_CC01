@@ -1,7 +1,0 @@
-# requirements-stage2.txt
-# Install after requirements-stage1.txt. Preserve Colab's matching CUDA-enabled torch.
-# Runtime: torch (CUDA build managed by Colab), torchvision is not required.
-opencv-python-headless>=4.8,<5
-scipy>=1.11,<2
-hdf5storage>=0.2,<0.3
-# torch is intentionally not force-pinned here: install/use a compatible CUDA build.

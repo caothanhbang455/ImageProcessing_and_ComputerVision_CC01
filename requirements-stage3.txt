@@ -1,5 +1,0 @@
-# requirements-stage3.txt
-# Install after Stage 2. Do not replace Colab's CUDA-enabled PyTorch build.
-scikit-image>=0.22,<0.27
-# Inherited: numpy, opencv-python-headless, torch, hdf5storage, pyyaml, pytest
-# MATLAB Engine and SIFT flow are optional external reference dependencies.

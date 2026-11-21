@@ -1,0 +1,15 @@
+# Dependencies for dataset access, method inference, tests, and Python evaluation.
+# This single file replaces requirements-stage1.txt, -stage2.txt, and -stage3.txt.
+# Keep Colab's CUDA-compatible torch installation; do not replace it here.
+# torchvision is not required by the verified official UVDoc inference path.
+# MATLAB Engine and SIFT flow are separate, optional external benchmark dependencies.
+
+numpy>=1.24,<3
+Pillow>=10,<13
+h5py>=3.9,<4
+PyYAML>=6,<7
+opencv-python-headless>=4.8,<5
+scipy>=1.11,<2
+hdf5storage>=0.2,<0.3
+scikit-image>=0.22,<0.27
+pytest>=8,<10

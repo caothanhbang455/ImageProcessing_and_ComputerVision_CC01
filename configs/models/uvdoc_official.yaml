@@ -1,0 +1,23 @@
+# configs/models/uvdoc_official.yaml
+model_id: uvdoc_official
+source:
+  repository: https://github.com/tanguymagne/UVDoc.git
+  commit: 4c9b82b537057aff2526e6dd118a847cdd072e82
+checkpoint:
+  relative_path: model/best_model.pkl
+  sha256: 7e90861b8a516eb4bc51f84bd889cb77275743d2d1d3ca8091951ec9f2b7da23
+architecture:
+  name: UVDocnet
+  num_filter: 32
+  kernel_size: 5
+  parameter_count: 8003463
+inference:
+  input_width: 488
+  input_height: 712
+  grid_height: 45
+  grid_width: 31
+  dtype: float32
+  batch_size: 1
+  interpolation: bilinear
+  padding_mode: zeros
+  align_corners: true

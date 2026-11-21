@@ -1,9 +1,10 @@
 # evaluation/runner.py
-"""Evaluate immutable Stage 2 runs, retaining attempted samples and failures."""
+"""Evaluate saved inference runs, retaining attempted samples and failures."""
 
 import csv
 import json
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -29,8 +30,15 @@ from models.deep.uvdoc import hash_file
 METRIC_FIELDS = ("sample_key", "method_id", "protocol_id", "metric_name", "value", "unit",
                  "higher_is_better", "status", "reason", "reference_verified")
 LINE_FIELDS = ("sample_key", "sample_id", "protocol_id", "direction", "position", "value", "status", "reason")
-SAMPLE_FIELDS = ("sample_key", "sample_id", "dataset", "variant", "group_id", "prediction_status",
+SAMPLE_FIELDS = ("sample_key", "sample_id", "dataset", "variant", "group_id", "method_id", "prediction_status",
                  "evaluation_status", "reason", "n_valid_lines", "n_missing_lines", "artifact_path")
+
+
+SAFE_METHOD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*\Z")
+
+
+class IncompatiblePrediction(ValueError) :
+    """The selected metric requires an output representation this method lacks."""
 
 
 def load_evaluation_config(root : Path) -> dict :
@@ -107,7 +115,7 @@ def reference_source_identity(source_dir : str | Path | None) -> dict :
 
 
 def inspect_inference_run(root : Path, inference_run : Path, protocol : dict) -> tuple[list[dict], dict, dict] :
-    """Bind every Stage 2 sample to a Stage 1 manifest identity before writing results."""
+    """Bind saved predictions to Stage 1 identities before writing results."""
     dataset = protocol["dataset"]
     variant = protocol["variant"]
     records = {r.sample_key : r for r in load_records(dataset, root, variant=variant)}
@@ -127,26 +135,34 @@ def inspect_inference_run(root : Path, inference_run : Path, protocol : dict) ->
             row["group_id"] != (rec.group_id or "")) :
             raise ValueError(f"Stage 2 manifest identity mismatch: {key}")
         bound.append({**row, "_record" : rec})
-    artifacts = read_csv(inference_run / "artifacts.csv")
-    index = {}
-    for row in artifacts :
-        key = (row["sample_key"], row["artifact_type"])
-        if (key in index or row["sample_key"] not in {r["sample_key"] for r in source_rows}) :
-            raise ValueError(f"Duplicate or unexpected inference artifact identity: {key}")
-        index[key] = row
     provenance_path = inference_run / "provenance.json"
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    method_id = provenance.get("method_id")
+    if (not isinstance(method_id, str) or not SAFE_METHOD_ID.fullmatch(method_id)) :
+        raise ValueError("Inference provenance requires a safe nonempty method_id")
     actual_sha = hash_file(manifest_path(dataset, root))
     if (provenance.get("manifest_sha256") != actual_sha) :
-        raise ValueError("Stage 1 manifest SHA-256 differs from recorded Stage 2 inference")
-    if (provenance.get("method_id") != "uvdoc_official") :
-        raise ValueError("Stage 3 currently supports Stage 2 uvdoc_official inference artifacts")
+        raise ValueError("Stage 1 manifest SHA-256 differs from recorded inference")
+    artifacts = read_csv(inference_run / "artifacts.csv")
+    index = {}
+    valid_keys = {r["sample_key"] for r in source_rows}
+    for row in artifacts :
+        key = (row["sample_key"], row["artifact_type"])
+        if (key in index or row["sample_key"] not in valid_keys) :
+            raise ValueError(f"Duplicate or unexpected inference artifact identity: {key}")
+        relative = row.get("relative_path", "").replace("\\", "/")
+        parts = relative.split("/")
+        if (len(parts) < 4 or parts[:2] != ["predictions", method_id]) :
+            raise ValueError(f"Artifact path does not match inference method {method_id}: {relative}")
+        index[key] = row
+    for row in bound :
+        row["_method_id"] = method_id
     return bound, index, provenance
 
 
 def _measure(sample : dict, protocol_id : str, metric : str, status : str,
              value : float | None = None, reason : str = "", verified : bool = False) -> dict :
-    return MetricResult(sample_key=sample["sample_key"], method_id="uvdoc_official",
+    return MetricResult(sample_key=sample["sample_key"], method_id=sample["_method_id"],
                         protocol_id=protocol_id, metric_name=metric,
                         value=value, unit="px" if metric.endswith("_px") else "score",
                         higher_is_better=(metric == "ms_ssim"), status=status,
@@ -171,7 +187,7 @@ def evaluate_inference_run(root : str | Path, inference_run : str | Path, protoc
                            official_source : str | Path | None = None,
                            verify_parity_ids : list[str] | None = None,
                            run_matlab : bool = False) -> dict[str, Any] :
-    """Evaluate a saved Stage 2 run without invoking the neural network.
+    """Evaluate saved method predictions without invoking inference.
 
     Creates a fresh run directory. Results are written after each sample so
     interrupted runs preserve completed sample records for inspection.
@@ -210,7 +226,9 @@ def evaluate_inference_run(root : str | Path, inference_run : str | Path, protoc
                                               "device" : device, "verify_parity_ids" : sorted(parity_set),
                                               "run_matlab" : run_matlab})
     save_json(output_dir / "provenance.json", {
-        "stage2_run" : str(inference_run), "stage2_manifest_sha256" : provenance["manifest_sha256"],
+        "stage2_run" : str(inference_run), "inference_run" : str(inference_run),
+        "method_id" : provenance["method_id"],
+        "stage2_manifest_sha256" : provenance["manifest_sha256"],
         "stage2_checkpoint_sha256" : provenance.get("checkpoint_sha256"),
         "stage2_source_commit" : provenance.get("official_source_commit"),
         "external_reference_source" : reference_source_identity(official_source),
@@ -227,6 +245,7 @@ def evaluate_inference_run(root : str | Path, inference_run : str | Path, protoc
     for index, row in enumerate(bound, start=1) :
         sample = {k : row.get(k, "") for k in ("sample_key", "sample_id", "dataset", "variant", "group_id")}
         sample["prediction_status"] = row["status"]
+        sample["method_id"] = row["_method_id"]
         sample.update(evaluation_status="", reason="", n_valid_lines=0, n_missing_lines=0, artifact_path="")
         verified = False
         phase = "prediction"
@@ -245,6 +264,9 @@ def evaluate_inference_run(root : str | Path, inference_run : str | Path, protoc
                 raise ValueError(f"Stage 2 PNG dimensions disagree with samples.csv for {row['sample_key']}")
             grid_file = None
             if (protocol_kind in ("uvdoc_lines", "uvdoc_texture", "uvdoc_matlab")) :
+                if (not row.get("grid_artifact")) :
+                    raise IncompatiblePrediction("UVDoc protocol requires a compatible coarse backward grid; "
+                                                 "an image or dense map alone is insufficient")
                 grid_file = verify_registered_artifact(inference_run, row["sample_key"], row["grid_artifact"],
                                                        "coarse_grids", registry)
             record = row["_record"]
@@ -325,6 +347,7 @@ def evaluate_inference_run(root : str | Path, inference_run : str | Path, protoc
                 raise ValueError(f"Unknown evaluation protocol kind: {protocol_kind}")
         except Exception as error :
             status = "UNAVAILABLE_PREDICTION" if (row["status"] != "OK") else (
+                "NOT_APPLICABLE" if isinstance(error, IncompatiblePrediction) else
                 ("UNAVAILABLE_PREDICTION" if phase == "prediction" else "UNAVAILABLE_REFERENCE")
                 if isinstance(error, FileNotFoundError) else
                 "UNAVAILABLE_DEPENDENCY" if isinstance(error, (ImportError, ModuleNotFoundError)) or
@@ -398,7 +421,8 @@ def evaluate_inference_run(root : str | Path, inference_run : str | Path, protoc
               "n_metric_ok", "n_metric_missing", "coverage_fraction", "reference_verified",
               "n_expected", "n_valid", "n_missing", "mean", "median", "std", "min", "max", "p05", "p95"])
     counts = Counter(r["evaluation_status"] for r in sample_rows)
-    result = {"protocol_id" : protocol_id, "inference_run" : str(inference_run), "evaluation_run" : str(output_dir),
+    result = {"protocol_id" : protocol_id, "method_id" : provenance["method_id"],
+              "inference_run" : str(inference_run), "evaluation_run" : str(output_dir),
               "n_attempted" : len(sample_rows), "status_counts" : dict(counts),
               "metrics" : summaries, "parity" : parity_rows,
               "matlab" : matlab_record, "reference_verified" : bool(parity_rows) and
@@ -411,7 +435,8 @@ def evaluate_inference_run(root : str | Path, inference_run : str | Path, protoc
                               "bytes" : file.stat().st_size, "sha256" : hash_file(file)})
     save_csv(output_dir / "artifacts.csv", inventory, ["relative_path", "bytes", "sha256"])
     report = ["# Stage 3 evaluation report", "", f"Protocol: `{protocol_id}`",
-              f"Inference run: `{inference_run}`", f"Attempted samples: **{len(sample_rows)}**", "",
+              f"Method: `{provenance['method_id']}`", f"Inference run: `{inference_run}`",
+              f"Attempted samples: **{len(sample_rows)}**", "",
               "## Evaluation status", ""]
     report.extend(f"- {key}: {counts[key]}" for key in sorted(counts))
     report.extend(["", "## Metric availability", ""])

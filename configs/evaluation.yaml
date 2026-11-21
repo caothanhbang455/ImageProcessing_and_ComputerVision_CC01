@@ -1,0 +1,42 @@
+# configs/evaluation.yaml
+version: 1
+protocols:
+  uvdoc_lines_official_n25_v1:
+    dataset: uvdoc_benchmark
+    variant: rendered
+    kind: uvdoc_lines
+    metric_names: [horizontal_line_std_px, vertical_line_std_px]
+    lines_per_direction: 25
+    reference_implementation: uvdocBenchmark_metric.py
+  uvdoc_texture_prepare_v1:
+    dataset: uvdoc_benchmark
+    variant: rendered
+    kind: uvdoc_texture
+    metric_names: []
+    reference_implementation: uvdocBenchmark_pred.py
+  uvdoc_visual_matlab_v1:
+    dataset: uvdoc_benchmark
+    variant: rendered
+    kind: uvdoc_matlab
+    metric_names: [ms_ssim, ad]
+    reference_implementation: evalScriptUVDoc.m
+  docunet_matlab_legacy_v1:
+    dataset: docunet
+    variant: crop
+    kind: docunet_matlab
+    metric_names: [ms_ssim, ld, ad]
+    orientation_policy: legacy
+    reference_implementation: evalScript.m
+  docunet_matlab_corrected64_v1:
+    dataset: docunet
+    variant: crop
+    kind: docunet_matlab
+    metric_names: [ms_ssim, ld, ad]
+    orientation_policy: corrected64_requires_new_inference
+    reference_implementation: evalScript.m
+  dir300_matlab_v1:
+    dataset: dir300
+    variant: dist
+    kind: dir300_matlab
+    metric_names: [ms_ssim, ld]
+    reference_implementation: ssim_ld_eval_DIR300.m

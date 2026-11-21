@@ -1,9 +1,26 @@
-# Dataset đã giải nén và gói tải: đặt ở thư mục gốc repo.
-/data/
-/raw/
+# Local datasets and research source material. Keep them out of the shared repository.
+/dataset/
 /datasets/
+/raw/
+/paper/
 
-# Gói nén có thể chứa dữ liệu, kể cả khi đặt ngoài raw/.
+# Preserve the old local notebook separately. New project notebooks belong in /notebooks/.
+/notebook/
+
+# Model weights, training artifacts, predictions, and generated analysis.
+/checkpoints/
+/weights/
+/runs/
+/outputs/
+/results/
+/reports/eda/
+/reports/baselines/
+/artifacts/
+/wandb/
+/lightning_logs/
+/mlruns/
+
+# Large archives and model files anywhere in the tree.
 *.zip
 *.7z
 *.rar
@@ -13,22 +30,53 @@
 *.gz
 *.bz2
 *.xz
+*.pt
+*.pth
+*.pkl
+*.ckpt
+*.safetensors
+*.onnx
 
-# Báo cáo EDA tự sinh; vẫn giữ được các báo cáo viết tay ở nơi khác.
-/reports/eda/
-/outputs/
+# Generated binary arrays and geometry/image annotations.
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.exr
 
-# Notebook / Python / môi trường cục bộ.
-.ipynb_checkpoints/
+# Python and notebook caches.
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# Virtual environments and private environment variables.
 .venv/
 venv/
+env/
 .env
 .env.*
 !.env.example
 
-# Metadata hệ điều hành.
+# Temporary and local editor files.
+*.log
+*.tmp
+*.bak
+*.swp
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Intentionally NOT ignored: /data/ (dataset Python code), /documentation/,
+# /notebooks/ (committed notebook sources), and /tests/.
+
+# Local file inventories and Git diagnostic exports.
+/files.txt
+/git_status*.txt
+/repo_inventory*.txt
+
+/CLAUDE.md

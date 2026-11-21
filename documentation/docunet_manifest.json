@@ -1,0 +1,86 @@
+{
+  "dataset": "DocUNet benchmark",
+  "inspected_at_utc": "2026-11-10T05:54:48.858032+00:00",
+  "project_root": "/content/drive/MyDrive/Document Unwarping",
+  "archives": [
+    {
+      "component": "original",
+      "source": "original project server",
+      "archive_size": "328.5 MiB",
+      "status": "ready",
+      "details": "130 extracted; 0 reused; 0 skipped"
+    },
+    {
+      "component": "crop",
+      "source": "author Google Drive backup",
+      "archive_size": "281.1 MiB",
+      "status": "ready",
+      "details": "130 extracted; 0 reused; 0 skipped"
+    },
+    {
+      "component": "scan",
+      "source": "original project server",
+      "archive_size": "416.2 MiB",
+      "status": "ready",
+      "details": "65 extracted; 0 reused; 0 skipped"
+    },
+    {
+      "component": "eval",
+      "source": "author Google Drive backup",
+      "archive_size": "1.3 MiB",
+      "status": "ready",
+      "details": "45 extracted; 0 reused; 0 skipped"
+    }
+  ],
+  "inventory": [
+    {
+      "group": "original",
+      "images": 130,
+      "total_size": "332.7 MiB",
+      "image_formats": ".jpg",
+      "common_resolutions": "3024×4032 (100), 4032×3024 (30)",
+      "unreadable": 0
+    },
+    {
+      "group": "crop",
+      "images": 130,
+      "total_size": "286.0 MiB",
+      "image_formats": ".png",
+      "common_resolutions": "1724×1241 (1), 1632×817 (1), 1621×1675 (1)",
+      "unreadable": 0
+    },
+    {
+      "group": "scan",
+      "images": 65,
+      "total_size": "419.5 MiB",
+      "image_formats": ".png",
+      "common_resolutions": "2550×3300 (17), 1265×1770 (1), 2506×1262 (1)",
+      "unreadable": 0
+    }
+  ],
+  "matching": {
+    "crop_to_original": 0,
+    "photo_to_scan": 260
+  },
+  "evaluation_scripts": [
+    "eval/SIFTflow/SIFTflowc2f.m",
+    "eval/SIFTflow/computeColor.m",
+    "eval/SIFTflow/demo.m",
+    "eval/SIFTflow/flowToColor.m",
+    "eval/SIFTflow/mexDenseSIFT/Matrix.cpp",
+    "eval/SIFTflow/mexDenseSIFT/Vector.cpp",
+    "eval/SIFTflow/mexDenseSIFT/dir.cpp",
+    "eval/SIFTflow/mexDenseSIFT/mexDenseSIFT.cpp",
+    "eval/SIFTflow/mexDenseSIFT/mexDenseSIFT.m",
+    "eval/SIFTflow/mexDenseSIFT/showColorSIFT.m",
+    "eval/SIFTflow/mexDiscreteFlow/BPFlow.cpp",
+    "eval/SIFTflow/mexDiscreteFlow/Stochastic.cpp",
+    "eval/SIFTflow/mexDiscreteFlow/main.cpp",
+    "eval/SIFTflow/mexDiscreteFlow/mexDiscreteFlow.cpp",
+    "eval/SIFTflow/mexDiscreteFlow/mexDiscreteFlow.m",
+    "eval/SIFTflow/warpFL.m",
+    "eval/SIFTflow/warpFLColor.m",
+    "eval/SIFTflow/warpImage.m",
+    "eval/evalUnwarp.m"
+  ]
+}

@@ -1,0 +1,25 @@
+# configs/datasets.yaml
+# Manifest configuration only. Root paths are supplied at runtime.
+version: 1
+metadata_directory: dataset/_metadata
+datasets:
+  uvdoc_final:
+    label: UVDoc Final
+    manifest: uvdoc_final_manifest.csv
+    default_variant: rendered
+    expected_records: 20000
+  uvdoc_benchmark:
+    label: UVDoc Benchmark
+    manifest: uvdoc_benchmark_manifest.csv
+    default_variant: rendered
+    expected_records: 50
+  docunet:
+    label: DocUNet
+    manifest: docunet_manifest.csv
+    default_variant: crop
+    expected_records: 130
+  dir300:
+    label: DIR300
+    manifest: dir300_manifest.csv
+    default_variant: dist
+    expected_records: 300
